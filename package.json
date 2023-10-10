@@ -1,0 +1,16 @@
+{
+  "name": "graphql-library",
+  "version": "0.1.0",
+  "description": "Library api with GraphQL server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Evhenii Zakharchenko",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^4.9.4",
+    "graphql": "^16.8.1",
+    "uuid": "^9.0.1"
+  }
+}
