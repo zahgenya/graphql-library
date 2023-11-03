@@ -8,6 +8,7 @@ mongoose.set('strictQuery', false);
 const Book = require('./models/book');
 const Author = require('./models/author');
 const User = require('./models/user');
+const author = require('./models/author');
 
 require('dotenv').config();
 
@@ -177,7 +178,25 @@ const resolvers = {
         return Book.find({ genres: args.genre });
       }
     },
-    allAuthors: () => Author.find({}),
+    allAuthors: async () => {
+      try {
+        const authors = await Author.find({});
+        const authorsWithBookCount = await Promise.all(
+          authors.map(async (author) => {
+            const bookCount = await Book.countDocuments({ author: author._id });
+            return { ...author.toObject(), bookCount };
+          })
+        )
+        return authorsWithBookCount;
+      } catch (error) {
+        throw new GraphQLError('Failed to fetch authors', {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            error: error.message,
+          }
+        })
+      }
+    },
     me: (root, args, context) => {
       return context.currentUser;
     }
@@ -187,7 +206,7 @@ const resolvers = {
       return Book.find({ author: parent._id });
     },
     bookCount: (parent) => {
-      return Book.countDocuments({ author: parent._id });
+      return parent.bookCount;
     }
   },
   Mutation: {
