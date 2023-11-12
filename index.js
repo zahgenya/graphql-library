@@ -167,15 +167,29 @@ const resolvers = {
   Query: {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
-    allBooks: (root, args) => {
-      if (!args.author && !args.genre) {
-        return Book.find({});
-      } else if (args.author && args.genre) {
-        return Book.find({ author: args.author, genres: args.genre });
-      } else if (args.author) {
-        return Book.find({ author: args.author });
-      } else {
-        return Book.find({ genres: args.genre });
+    allBooks: async (root, args) => {
+      try {
+        const books = await Book.find({});
+        const booksWithAuthors = await Promise.all(
+          books.map(async (book) => {
+            const author = await Author.findById(book.author);
+            return {
+              title: book.title,
+              published: book.published,
+              author: author,
+              genres: book.genres,
+              id: book.id
+            };
+          })
+        )
+        return booksWithAuthors;
+      } catch (error) {
+        throw new GraphQLError('Failed to fetch books', {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            error: error.message,
+          }
+        })
       }
     },
     allAuthors: async () => {
