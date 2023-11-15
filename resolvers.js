@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Book = require('./models/book');
 const Author = require('./models/author');
 const User = require('./models/user');
+const user = require('./models/user');
 
 const resolvers = {
   Query: {
@@ -156,6 +157,28 @@ const resolvers = {
       };
 
       return { value: jwt.sign(userForToken, process.env.JWT_SECRET) };
+    },
+    addFavoriteGenre: async (root, args, context) => {
+      const currentUser = context.currentUser;
+
+      if (!currentUser) {
+        throw new GraphQLError('wrong credentials', {
+          extensions: { code: 'BAD_INPUT' }
+        })
+      }
+      currentUser.favoriteGenres = args.genres;
+      try {
+        await currentUser.save();
+      } catch (error) {
+        throw new GraphQLError('Failed to update user', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            error
+          }
+        });
+      }
+
+      return currentUser;
     }
   }
 };

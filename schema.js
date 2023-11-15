@@ -17,7 +17,7 @@ const typeDefs = `
 
   type User {
     username: String!
-    favoriteGenre: String
+    favoriteGenres: [String]
     id: ID!
   }
 
@@ -48,13 +48,17 @@ const typeDefs = `
 
     createUser(
       username: String!
-      favoriteGenre: String!
+      favoriteGenres: String!
     ): User
 
     login(
       username: String!
       password: String!
     ): Token
+
+    addFavoriteGenre(
+      genres: [String!]!
+    ): User
   }
 `;
 
