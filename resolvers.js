@@ -1,5 +1,7 @@
 const { GraphQLError } = require('graphql');
 const jwt = require('jsonwebtoken');
+const { PubSub } = require('graphql-subscriptions');
+const pubsub = new PubSub();
 
 const Book = require('./models/book');
 const Author = require('./models/author');
@@ -69,6 +71,13 @@ const resolvers = {
     addBook: async (root, args, context) => {
       const currentUser = context.currentUser;
 
+      const book = new Book({
+        title: args.title,
+        published: args.published,
+        author: null,
+        genres: args.genres
+      });
+
       if (!currentUser) {
         throw new GraphQLError('not authenticated', {
           extensions: {
@@ -85,25 +94,22 @@ const resolvers = {
           author = await author.save();
         }
 
-        const book = new Book({
-          title: args.title,
-          published: args.published,
-          author: author,
-          genres: args.genres
-        });
+        book.author = author
 
         await book.save();
-
-        return book;
       } catch (error) {
         throw new GraphQLError('Saving book failed', {
           extensions: {
             code: 'BAD_USER_INPUT',
-            invalidArgs: args.name,
+            invalidArgs: args.title,
             error
           }
         });
       }
+
+      pubsub.publish('BOOK_ADDED', { bookAdded: book });
+
+      return book;
     },
 
     editAuthor: async (root, args) => {
@@ -163,7 +169,7 @@ const resolvers = {
       if (!currentUser) {
         throw new GraphQLError('wrong credentials', {
           extensions: { code: 'BAD_INPUT' }
-        })
+        });
       }
       currentUser.favoriteGenres = args.genres;
       try {
@@ -178,6 +184,11 @@ const resolvers = {
       }
 
       return currentUser;
+    }
+  },
+  Subscription: {
+    bookAdded: {
+      subscribe: () => pubsub.asyncIterator('BOOK_ADDED')
     }
   }
 };

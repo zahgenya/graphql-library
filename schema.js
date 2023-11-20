@@ -60,6 +60,10 @@ const typeDefs = `
       genres: [String!]!
     ): User
   }
+
+  type Subscription {
+    bookAdded: Book!
+  }
 `;
 
 module.exports = typeDefs;
